@@ -17,3 +17,4 @@ service-account*.json
 # Otros archivos sensibles
 *.pem
 *.key
+.vercel
