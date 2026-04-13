@@ -53,39 +53,44 @@ function loadServiceAccountFromFile(): { projectId: string; clientEmail: string;
 }
 
 function buildCredential() {
-  // 1) Prioridad: archivo JSON (evita problemas con FIREBASE_PRIVATE_KEY en .env)
-  const fromFile = loadServiceAccountFromFile()
-  if (fromFile) return cert(fromFile)
+  // 1. Intentar cargar desde el JSON completo que pegaste en Vercel
+  // Esta es la variable de tu captura de pantalla
+  const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-  // 2) Variables de entorno
-  const fromEnv = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: cleanPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
-  }
-
-  const hasValidPem =
-    fromEnv.privateKey?.includes("-----BEGIN PRIVATE KEY-----") &&
-    fromEnv.privateKey?.includes("-----END PRIVATE KEY-----")
-
-  if (fromEnv.projectId && fromEnv.clientEmail && hasValidPem) {
+  if (serviceAccountRaw) {
     try {
-      return cert(fromEnv)
-    } catch {
-      // fall through to error
+      // Si el JSON viene con saltos de línea literales (\n), los limpiamos
+      const serviceAccount = JSON.parse(serviceAccountRaw);
+      return cert(serviceAccount);
+    } catch (error) {
+      console.error("Error parseando FIREBASE_SERVICE_ACCOUNT_KEY:", error);
     }
   }
 
-  throw new Error(
-    "Firebase Admin: configura credential con FIREBASE_SERVICE_ACCOUNT_PATH o coloca el JSON de cuenta de servicio en la raíz (ej. firebase-service-account.json o nexuscart-*-firebase-adminsdk-*.json)"
-  )
+  // 2. Fallback: Intentar cargar desde variables individuales (si las llegas a poner)
+  const privateKey = cleanPrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+  if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && privateKey) {
+    return cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: privateKey,
+    });
+  }
+
+  // 3. Durante el Build de Vercel, si no hay credenciales, devolvemos null en vez de romper
+  if (process.env.NODE_ENV === "production") {
+    console.warn("⚠️ Firebase Admin no configurado. Ignorando durante el build...");
+    return undefined;
+  }
+
+  throw new Error("Faltan credenciales de Firebase Admin.");
 }
 
 const app =
   getApps().length === 0
     ? initializeApp({
-        credential: buildCredential(),
-      })
+      credential: buildCredential(),
+    })
     : getApp()
 
 export const adminAuth = getAuth(app)
