@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { adminAuth } from "@/lib/firebaseAdmin"
+import { getAdminAuth } from "@/lib/firebaseAdmin"
 import { setSession } from "@/lib/auth"
 import connectDB from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       )
     }
 
+    const adminAuth = getAdminAuth()
     const decoded = await adminAuth.verifyIdToken(idToken)
 
     // Get role from MongoDB (source of truth)

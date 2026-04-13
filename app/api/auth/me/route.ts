@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { adminAuth } from "@/lib/firebaseAdmin"
+import { getAdminAuth } from "@/lib/firebaseAdmin"
 import { getSession } from "@/lib/auth"
 import connectDB from "@/lib/mongodb"
 import { User } from "@/lib/models/User"
@@ -15,6 +15,7 @@ export async function GET() {
     const mongoUser = await User.findOne({ firebaseUid: session.userId }).lean()
 
     if (!mongoUser) {
+      const adminAuth = getAdminAuth()
       const authUser = await adminAuth.getUser(session.userId).catch(() => null)
       return NextResponse.json({
         user: {

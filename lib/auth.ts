@@ -1,5 +1,5 @@
 import { cookies } from "next/headers"
-import { adminAuth } from "./firebaseAdmin"
+import { getAdminAuth } from "./firebaseAdmin"
 
 const SESSION_COOKIE_NAME = "nexuscart-token"
 const ROLE_COOKIE_NAME = "nexuscart-role"
@@ -7,11 +7,13 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7 // 7 días
 
 // Opcional: crear un Custom Token de Firebase a partir de un userId/role
 export async function createToken(payload: { userId: string; role: string }) {
+  const adminAuth = getAdminAuth()
   return adminAuth.createCustomToken(payload.userId, { role: payload.role })
 }
 
 export async function verifyToken(token: string) {
   try {
+    const adminAuth = getAdminAuth()
     const decoded = await adminAuth.verifyIdToken(token)
     return {
       userId: decoded.uid,
@@ -28,6 +30,7 @@ export async function getSession() {
   if (!sessionCookie) return null
 
   try {
+    const adminAuth = getAdminAuth()
     const decoded = await adminAuth.verifySessionCookie(sessionCookie, true)
     return {
       userId: decoded.uid,
@@ -40,6 +43,7 @@ export async function getSession() {
 
 // Espera recibir un ID token de Firebase desde el cliente
 export async function setSession(idToken: string, role?: string) {
+  const adminAuth = getAdminAuth()
   const expiresIn = SESSION_TTL_MS
   const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn })
   const cookieStore = await cookies()

@@ -17,4 +17,13 @@ service-account*.json
 # Otros archivos sensibles
 *.pem
 *.key
+
+# Vercel
 .vercel
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Non-project files (docs, archives)
+*.zip
+*.docx

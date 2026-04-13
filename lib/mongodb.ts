@@ -1,10 +1,11 @@
 import mongoose from "mongoose"
 
-const MONGODB_URI = process.env.MONGODB_URI as string
+// ---------------------------------------------------------------------------
+// Don't validate MONGODB_URI at module-level — during `next build` env vars
+// may not be available yet. Validation happens inside connectDB() instead.
+// ---------------------------------------------------------------------------
 
-if (!MONGODB_URI) {
-  throw new Error("Define MONGODB_URI en .env.local")
-}
+const MONGODB_URI = process.env.MONGODB_URI as string
 
 // Cache de conexión para Next.js (hot-reload en dev)
 interface MongooseCache {
@@ -23,8 +24,13 @@ global._mongooseCache = cached
 export async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) return cached.conn
 
+  const uri = MONGODB_URI || process.env.MONGODB_URI
+  if (!uri) {
+    throw new Error("MONGODB_URI is not defined. Add it to your environment variables.")
+  }
+
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    cached.promise = mongoose.connect(uri, {
       bufferCommands: false,
     })
   }
