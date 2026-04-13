@@ -23,6 +23,7 @@ service-account*.json
 
 # Build artifacts
 tsconfig.tsbuildinfo
+pnpm-lock.yaml
 
 # Non-project files (docs, archives)
 *.zip
