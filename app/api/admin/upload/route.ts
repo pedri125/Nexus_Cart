@@ -4,18 +4,6 @@ import path from "path"
 import { randomUUID } from "crypto"
 
 export async function POST(request: Request) {
-  // Vercel's filesystem is read-only — file uploads to disk won't persist
-  if (process.env.VERCEL) {
-    return NextResponse.json(
-      {
-        error:
-          "La subida de archivos al disco no está disponible en producción. " +
-          "Usa un servicio de almacenamiento en la nube (Firebase Storage, Cloudinary, etc.).",
-      },
-      { status: 501 }
-    )
-  }
-
   try {
     const formData = await request.formData()
     const file = formData.get("image") as File | null

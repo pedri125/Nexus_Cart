@@ -30,7 +30,7 @@ function getOrInitApp(): App {
 
   // --- Build credential ---
 
-  // 1. Full JSON from FIREBASE_SERVICE_ACCOUNT_KEY (recommended for Vercel)
+  // 1. Full JSON from FIREBASE_SERVICE_ACCOUNT_KEY
   const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
   if (serviceAccountRaw) {
     try {

@@ -107,7 +107,7 @@ export const SORT_OPTIONS = [
 export const SITE_CONFIG = {
   name: "NexusCart",
   description: "Tu destino premium de tecnologia y electronica",
-  url: "https://nexuscart.vercel.app",
+  url: "http://localhost:3000",
   defaultCountry: "Colombia",
   countryCode: "CO",
   currency: "COP",
