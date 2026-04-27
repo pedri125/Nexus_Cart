@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CATEGORIES, BRANDS } from "@/lib/constants"
+import { CATEGORIES, BRANDS, formatCOP } from "@/lib/constants"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -232,7 +232,7 @@ export default function ProductosAdmin() {
                           {CATEGORIES.find((c) => c.slug === p.category)?.name ?? p.category}
                         </Badge>
                       </td>
-                      <td className="py-3 pr-4 font-medium whitespace-nowrap">${p.price?.toLocaleString()}</td>
+                      <td className="py-3 pr-4 font-medium whitespace-nowrap">{formatCOP(p.price)}</td>
                       <td className="py-3 pr-4">
                         <span className={`font-semibold ${p.stock <= 10 ? "text-destructive" : "text-foreground"}`}>
                           {p.stock}

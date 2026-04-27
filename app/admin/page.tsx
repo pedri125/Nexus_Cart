@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useAuthStore } from "@/store/auth-store"
+import { formatCOP } from "@/lib/constants"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -39,36 +40,56 @@ function StatCard({ title, value, description, icon: Icon, color = "text-primary
 
 export default function AdminPage() {
   const router = useRouter()
-  const { user, setUser } = useAuthStore()
-  const { data: authData, isLoading: authLoading } = useSWR("/api/auth/me", fetcher)
+  const { user, isHydrated, setUser } = useAuthStore()
+  const { data: authData, isLoading: authLoading } = useSWR("/api/auth/me", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000,
+  })
   const { data: products } = useSWR("/api/admin/products", fetcher)
   const { data: suppliers } = useSWR("/api/admin/suppliers", fetcher)
   const { data: purchases } = useSWR("/api/admin/purchases", fetcher)
   const { data: sales } = useSWR("/api/admin/sales", fetcher)
   const { data: alerts } = useSWR("/api/admin/alerts", fetcher)
 
+  // Sync auth data to store when received
   useEffect(() => {
     if (authData?.user) setUser(authData.user)
   }, [authData, setUser])
 
+  // Non-admin users are sent away (middleware already blocks, this is a safety net)
   useEffect(() => {
     if (authLoading) return
-    if (!authData?.user) { router.replace("/login"); return }
-    if (authData.user.role !== "admin") router.replace("/perfil")
+    if (authData?.user && authData.user.role !== "admin") {
+      router.replace("/perfil")
+    }
   }, [authLoading, authData, router])
 
-  const isAdmin = user?.role === "admin"
+  // Determine admin status from either store or auth data
+  const currentUser = authData?.user ?? user
+  const isAdmin = currentUser?.role === "admin"
+
+  // Show loading while hydrating or fetching auth
+  if ((!isHydrated && !authData) || (authLoading && !currentUser)) {
+    return <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">Cargando...</div>
+  }
+
+  // If we have no user and we're done loading, the middleware will handle redirect
+  if (!isAdmin && !authLoading) {
+    return <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">Cargando...</div>
+  }
 
   const totalProducts = Array.isArray(products) ? products.length : 0
   const totalStock = Array.isArray(products) ? products.reduce((s: number, p: any) => s + (p.stock ?? 0), 0) : 0
   const totalSales = Array.isArray(sales) ? sales.length : 0
-  const totalRevenue = Array.isArray(sales) ? sales.reduce((s: number, v: any) => s + (v.total ?? 0), 0) : 0
+  // Solo ventas activas (no canceladas) — coherente con el panel de ventas
+  const activeSales = Array.isArray(sales) ? sales.filter((v: any) => v.status !== "cancelled") : []
+  const totalRevenue = activeSales.reduce((s: number, v: any) => s + (v.total ?? 0), 0)
   const totalSuppliers = Array.isArray(suppliers) ? suppliers.length : 0
   const totalAlerts = alerts?.alerts ? alerts.alerts.length : 0
-
-  if (authLoading || !authData?.user || !isAdmin) {
-    return <div className="mx-auto max-w-7xl px-4 py-16 text-center text-muted-foreground">Cargando...</div>
-  }
+  // Gastos: compras recibidas
+  const receivedPurchases = Array.isArray(purchases) ? purchases.filter((p: any) => p.status === "received") : []
+  const totalSpent = receivedPurchases.reduce((s: number, p: any) => s + (p.totalCost ?? 0), 0)
+  const balance = totalRevenue - totalSpent
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 lg:px-8">
@@ -82,11 +103,13 @@ export default function AdminPage() {
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Productos" value={totalProducts.toString()} description={`Stock total: ${totalStock.toLocaleString()} uds`} icon={Package} />
-        <StatCard title="Ventas" value={totalSales.toString()} description={`Ingresos: $${totalRevenue.toLocaleString()}`} icon={TrendingUp} color="text-green-500" />
+        <StatCard title="Ventas" value={totalSales.toString()} description={`Ingresos: ${formatCOP(totalRevenue)}`} icon={TrendingUp} color="text-green-500" />
         <StatCard title="Proveedores" value={totalSuppliers.toString()} description="Proveedores registrados" icon={Truck} color="text-blue-500" />
-        <StatCard title="Compras" value={Array.isArray(purchases) ? purchases.length.toString() : "0"} description="Órdenes de compra" icon={ShoppingCart} color="text-orange-500" />
+        <StatCard title="Compras" value={Array.isArray(purchases) ? purchases.length.toString() : "0"} description={`Gastado: ${formatCOP(totalSpent)}`} icon={ShoppingCart} color="text-orange-500" />
         <StatCard title="Alertas Stock" value={totalAlerts.toString()} description={`Productos con stock ≤ 10`} icon={AlertTriangle} color="text-red-500" />
-        <StatCard title="Ingresos" value={`$${totalRevenue.toLocaleString()}`} description="Total en ventas registradas" icon={DollarSign} color="text-emerald-500" />
+        <StatCard title="Ingresos" value={formatCOP(totalRevenue)} description="Ventas activas (sin canceladas)" icon={DollarSign} color="text-emerald-500" />
+        <StatCard title="Gastos" value={formatCOP(totalSpent)} description="Compras recibidas a proveedores" icon={ShoppingCart} color="text-orange-500" />
+        <StatCard title="Balance" value={formatCOP(balance)} description="Ingresos − Gastos" icon={BarChart3} color={balance >= 0 ? "text-emerald-500" : "text-red-500"} />
       </div>
 
       {/* Quick alerts */}
@@ -134,7 +157,7 @@ export default function AdminPage() {
                     <tr key={s._id} className="border-b border-border/50">
                       <td className="py-2 text-xs text-muted-foreground font-mono">{s._id.slice(-8)}</td>
                       <td className="py-2">{s.userEmail}</td>
-                      <td className="py-2 font-medium">${s.total?.toLocaleString()}</td>
+                      <td className="py-2 font-medium">{formatCOP(s.total)}</td>
                       <td className="py-2">
                         <Badge variant={s.status === "delivered" ? "default" : "secondary"} className="text-xs capitalize">
                           {s.status}

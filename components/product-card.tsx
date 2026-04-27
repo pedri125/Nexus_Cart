@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useCartStore } from "@/store/cart-store"
 import { toast } from "sonner"
+import { formatCOP } from "@/lib/constants"
 import type { Product } from "@/lib/types"
 
 export function ProductCard({ product }: { product: Product }) {
@@ -83,11 +84,11 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-foreground">
-              ${product.price.toLocaleString()}
+              {formatCOP(product.price)}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <span className="text-sm text-muted-foreground line-through">
-                ${product.originalPrice.toLocaleString()}
+                {formatCOP(product.originalPrice)}
               </span>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { signInWithEmailAndPassword } from "firebase/auth"
@@ -15,9 +15,17 @@ import { SITE_CONFIG } from "@/lib/constants"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { setUser } = useAuthStore()
+  const { user, isHydrated, setUser } = useAuthStore()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  // If the user is already logged in as admin, redirect immediately to admin panel
+  useEffect(() => {
+    if (!isHydrated) return
+    if (user?.role === "admin") {
+      window.location.href = "/admin"
+    }
+  }, [isHydrated, user])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -47,7 +55,9 @@ export default function LoginPage() {
       setUser(data.user)
       toast.success("Bienvenido de vuelta")
       if (data.user?.role === "admin") {
-        router.push("/admin")
+        // Use hard redirect to ensure session cookies are available on the admin page
+        window.location.href = "/admin"
+        return
       } else {
         router.push("/perfil")
       }

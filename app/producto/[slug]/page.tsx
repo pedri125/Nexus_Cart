@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useCartStore } from "@/store/cart-store"
 import { useAuthStore } from "@/store/auth-store"
 import { toast } from "sonner"
+import { formatCOP } from "@/lib/constants"
 import type { Product } from "@/lib/types"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
@@ -217,15 +218,15 @@ export default function ProductoPage() {
           {/* Price */}
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-bold text-foreground">
-              ${product.price.toLocaleString()}
+              {formatCOP(product.price)}
             </span>
             {product.originalPrice && product.originalPrice > product.price && (
               <>
                 <span className="text-lg text-muted-foreground line-through">
-                  ${product.originalPrice.toLocaleString()}
+                  {formatCOP(product.originalPrice)}
                 </span>
                 <Badge variant="secondary" className="text-primary">
-                  Ahorras ${(product.originalPrice - product.price).toLocaleString()}
+                  Ahorras {formatCOP(product.originalPrice - product.price)}
                 </Badge>
               </>
             )}

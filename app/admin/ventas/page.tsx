@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
+import { formatCOP } from "@/lib/constants"
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
@@ -29,10 +30,6 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
-
-function fmtCOP(n: number) {
-  return `$${(n ?? 0).toLocaleString("es-CO")}`
-}
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("es-CO", { dateStyle: "medium" })
@@ -103,9 +100,9 @@ async function exportPDF(sales: any[]) {
     startY: 32,
     head: [["Concepto", "Monto"]],
     body: [
-      ["Total Ingresos (ventas activas)", fmtCOP(totalIngresos)],
-      ["Total Devoluciones / Reembolsos  (canceladas)", fmtCOP(totalDevoluciones)],
-      ["Ingreso Neto", fmtCOP(neto)],
+      ["Total Ingresos (ventas activas)", formatCOP(totalIngresos)],
+      ["Total Devoluciones / Reembolsos  (canceladas)", formatCOP(totalDevoluciones)],
+      ["Ingreso Neto", formatCOP(neto)],
     ],
     theme: "grid",
     headStyles: { fillColor: [99, 102, 241] },
@@ -124,9 +121,9 @@ async function exportPDF(sales: any[]) {
       s.userEmail,
       STATUS_LABELS[s.status] ?? s.status,
       s.paymentMethod,
-      fmtCOP(s.subtotal),
-      fmtCOP(s.tax),
-      fmtCOP(s.total),
+      formatCOP(s.subtotal),
+      formatCOP(s.tax),
+      formatCOP(s.total),
       formatDate(s.createdAt),
     ]),
     theme: "striped",
@@ -147,9 +144,9 @@ async function exportPDF(sales: any[]) {
         `#${s._id?.slice(-8)}`,
         s.userEmail,
         s.paymentMethod,
-        fmtCOP(s.subtotal),
-        fmtCOP(s.tax),
-        fmtCOP(s.total),
+        formatCOP(s.subtotal),
+        formatCOP(s.tax),
+        formatCOP(s.total),
         formatDate(s.createdAt),
       ]),
       theme: "striped",
@@ -232,9 +229,9 @@ export default function VentasAdmin() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             {(sales ?? []).length} ventas ·{" "}
-            <span className="text-green-600 font-medium">{fmtCOP(totalRevenue)} ingresos</span>
+            <span className="text-green-600 font-medium">{formatCOP(totalRevenue)} ingresos</span>
             {totalRefunds > 0 && (
-              <> · <span className="text-red-500 font-medium">{fmtCOP(totalRefunds)} devoluciones</span></>
+              <> · <span className="text-red-500 font-medium">{formatCOP(totalRefunds)} devoluciones</span></>
             )}
             · {delivered} entregadas
             {isValidating && <RefreshCw className="inline h-3 w-3 ml-2 animate-spin text-muted-foreground" />}
@@ -278,19 +275,19 @@ export default function VentasAdmin() {
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Ingresos netos</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">{fmtCOP(totalRevenue - totalRefunds)}</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{formatCOP(totalRevenue - totalRefunds)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total ingresos</p>
-            <p className="text-2xl font-bold mt-1">{fmtCOP(totalRevenue)}</p>
+            <p className="text-2xl font-bold mt-1">{formatCOP(totalRevenue)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Devoluciones</p>
-            <p className="text-2xl font-bold text-red-500 mt-1">{fmtCOP(totalRefunds)}</p>
+            <p className="text-2xl font-bold text-red-500 mt-1">{formatCOP(totalRefunds)}</p>
           </CardContent>
         </Card>
       </div>
@@ -349,7 +346,7 @@ export default function VentasAdmin() {
                           #{s._id?.slice(-8)}
                         </td>
                         <td className="py-3">{s.userEmail}</td>
-                        <td className="py-3 font-semibold">{fmtCOP(s.total)}</td>
+                        <td className="py-3 font-semibold">{formatCOP(s.total)}</td>
                         <td className="py-3 capitalize text-muted-foreground">{s.paymentMethod}</td>
                         <td className="py-3">
                           {/* F1 – Cancelled state is locked; show badge instead of select */}
@@ -432,28 +429,28 @@ export default function VentasAdmin() {
                 {(detail.items ?? []).map((it: any, i: number) => (
                   <div key={i} className="flex justify-between text-muted-foreground">
                     <span>{it.name} x{it.quantity}</span>
-                    <span>{fmtCOP(it.unitPrice * it.quantity)}</span>
+                    <span>{formatCOP(it.unitPrice * it.quantity)}</span>
                   </div>
                 ))}
               </div>
               <div className="border-t border-border pt-2 space-y-1">
-                <div className="flex justify-between"><span>Subtotal</span><span>{fmtCOP(detail.subtotal)}</span></div>
-                <div className="flex justify-between"><span>IVA</span><span>{fmtCOP(detail.tax)}</span></div>
+                <div className="flex justify-between"><span>Subtotal</span><span>{formatCOP(detail.subtotal)}</span></div>
+                <div className="flex justify-between"><span>IVA</span><span>{formatCOP(detail.tax)}</span></div>
                 {detail.status === "cancelled" && (
                   <div className="flex justify-between text-red-500 font-medium">
                     <span>Reembolso procesado</span>
-                    <span>-{fmtCOP(detail.total)}</span>
+                    <span>-{formatCOP(detail.total)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold border-t border-border pt-1">
                   <span>Total</span>
-                  <span>{fmtCOP(detail.total)}</span>
+                  <span>{formatCOP(detail.total)}</span>
                 </div>
               </div>
               {detail.status === "cancelled" && (
                 <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 mt-2">
                   <p className="text-xs text-red-600 font-medium">
-                    ⚠️ Esta venta fue cancelada. El importe de {fmtCOP(detail.total)} fue registrado como devolución/reembolso.
+                    ⚠️ Esta venta fue cancelada. El importe de {formatCOP(detail.total)} fue registrado como devolución/reembolso.
                   </p>
                 </div>
               )}

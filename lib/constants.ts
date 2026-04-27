@@ -89,11 +89,11 @@ export const BRANDS = [
 ]
 
 export const PRICE_RANGES = [
-  { label: "Menos de $100", min: 0, max: 100 },
-  { label: "$100 - $500", min: 100, max: 500 },
-  { label: "$500 - $1,000", min: 500, max: 1000 },
-  { label: "$1,000 - $2,000", min: 1000, max: 2000 },
-  { label: "Mas de $2,000", min: 2000, max: Infinity },
+  { label: "Menos de $100.000", min: 0, max: 100000 },
+  { label: "$100.000 - $500.000", min: 100000, max: 500000 },
+  { label: "$500.000 - $1.000.000", min: 500000, max: 1000000 },
+  { label: "$1.000.000 - $3.000.000", min: 1000000, max: 3000000 },
+  { label: "Más de $3.000.000", min: 3000000, max: Infinity },
 ]
 
 export const SORT_OPTIONS = [

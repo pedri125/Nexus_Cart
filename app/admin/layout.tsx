@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -22,6 +23,22 @@ const navItems = [
   { href: "/admin/alertas", label: "Alertas de Stock", icon: AlertTriangle },
 ]
 
+const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000 // 12 horas en ms
+const LAST_UPDATE_KEY = "nexuscart-last-order-update"
+
+async function runOrderUpdate() {
+  try {
+    const res = await fetch("/api/cron/update-orders")
+    const data = await res.json()
+    if (res.ok) {
+      localStorage.setItem(LAST_UPDATE_KEY, Date.now().toString())
+      console.log("[NexusCart] Pedidos actualizados automáticamente:", data.message)
+    }
+  } catch (err) {
+    console.error("[NexusCart] Error al actualizar pedidos:", err)
+  }
+}
+
 async function doLogout() {
   await fetch("/api/auth/logout", { method: "POST" }).catch(() => null)
   window.location.href = "/login"
@@ -29,6 +46,33 @@ async function doLogout() {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+
+  // Actualización automática de pedidos cada 12 horas
+  useEffect(() => {
+    // Verificar si han pasado 12+ horas desde la última actualización
+    const lastUpdate = parseInt(localStorage.getItem(LAST_UPDATE_KEY) ?? "0", 10)
+    const elapsed = Date.now() - lastUpdate
+
+    if (elapsed >= TWELVE_HOURS_MS) {
+      runOrderUpdate()
+    }
+
+    // Programar siguiente actualización en el tiempo restante
+    const remaining = Math.max(TWELVE_HOURS_MS - elapsed, 0)
+    const firstTimeout = setTimeout(() => {
+      runOrderUpdate()
+      // Después continuar cada 12 horas
+    }, remaining)
+
+    const interval = setInterval(() => {
+      runOrderUpdate()
+    }, TWELVE_HOURS_MS)
+
+    return () => {
+      clearTimeout(firstTimeout)
+      clearInterval(interval)
+    }
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-background">
